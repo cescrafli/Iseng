@@ -10,7 +10,7 @@
   },
   "profiles": {
     "http": {
-      "commandName": "Project",
+      "commandName": "Project", 
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "applicationUrl": "http://localhost:5265",
@@ -29,6 +29,13 @@
     },
     "IIS Express": {
       "commandName": "IISExpress",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "CyberMonitor (IIS Local)": {
+      "commandName": "IIS",
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
