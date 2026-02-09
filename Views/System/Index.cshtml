@@ -1,0 +1,86 @@
+@{
+    ViewData["Title"] = "Storage & System";
+}
+
+<div class="dashboard-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1>Storage & Info <span class="status-badge">LIVE</span></h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row" id="diskGrid">
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Scanning Drives...</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/monitorHub")
+            .build();
+
+        connection.on("ReceiveDiskInfo", function (message) {
+            try {
+                const disks = JSON.parse(message);
+                let html = "";
+                
+                disks.forEach(function(d) {
+                    const usedGB = (d.used / 1024 / 1024 / 1024).toFixed(1);
+                    const totalGB = (d.total / 1024 / 1024 / 1024).toFixed(1);
+                    const freeGB = (d.free / 1024 / 1024 / 1024).toFixed(1);
+                    let color = "success";
+                    if(d.percent > 70) color = "warning";
+                    if(d.percent > 90) color = "danger";
+
+                    html += `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-title">
+                                ${d.device} <small class="text-muted">(${d.fstype})</small>
+                                <span class="badge bg-secondary">${d.mountpoint}</span>
+                            </div>
+                            <div class="card-body">
+                                <h2 class="display-6 mt-3 mb-1">${d.percent}%</h2>
+                                <small class="text-muted">Used</small>
+                                
+                                <div class="progress mt-2 mb-3" style="height: 10px;">
+                                    <div class="progress-bar bg-${color}" role="progressbar" style="width: ${d.percent}%"></div>
+                                </div>
+                                
+                                <ul class="list-group list-group-flush small">
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Total Size</span>
+                                        <strong>${totalGB} GB</strong>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Used</span>
+                                        <strong>${usedGB} GB</strong>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Free</span>
+                                        <strong>${freeGB} GB</strong>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                
+                document.getElementById("diskGrid").innerHTML = html;
+            } catch(e) { console.error(e); }
+        });
+
+        connection.start();
+    </script>
+}

@@ -1,0 +1,66 @@
+@{
+    ViewData["Title"] = "Process Explorer";
+}
+
+<div class="dashboard-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1>Process Explorer <span class="status-badge">LIVE</span></h1>
+            </div>
+            <div class="col-auto">
+                <span class="text-muted small">Top 20 Consumers</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="procTable">
+                <thead>
+                    <tr>
+                        <th>PID</th>
+                        <th>Name</th>
+                        <th>User</th>
+                        <th>CPU %</th>
+                        <th>Mem %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="5" class="text-center">Waiting for data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/monitorHub")
+            .build();
+
+        connection.on("ReceiveProcesses", function (message) {
+            try {
+                const procs = JSON.parse(message);
+                let html = "";
+                procs.forEach(function(p) {
+                    html += `<tr>
+                        <td><code>${p.pid}</code></td>
+                        <td><b>${p.name}</b></td>
+                        <td>${p.username || '-'}</td>
+                        <td><div class="progress" style="height: 6px; width: 50px; display:inline-block; margin-right:5px;"><div class="progress-bar bg-primary" style="width:${Math.min(p.cpu_percent, 100)}%"></div></div> ${p.cpu_percent.toFixed(1)}%</td>
+                        <td>${p.memory_percent.toFixed(1)}%</td>
+                    </tr>`;
+                });
+                document.querySelector("#procTable tbody").innerHTML = html;
+            } catch(e) { console.error(e); }
+        });
+
+        connection.start();
+    </script>
+}
