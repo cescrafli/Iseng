@@ -21,7 +21,7 @@
             <table class="table table-hover mb-0" id="procTable">
                 <thead>
                     <tr>
-                        <th>PID</th>
+                        <th>ID</th>
                         <th>Name</th>
                         <th>User</th>
                         <th>CPU %</th>
@@ -48,18 +48,42 @@
             try {
                 const procs = JSON.parse(message);
                 let html = "";
-                procs.forEach(function(p) {
-                    html += `<tr>
+                procs.forEach(function(p, index) {
+                    // Stagger animation based on index
+                    const delay = index * 50;
+                    html += `<tr style="animation: fadeIn 0.5s ease forwards; opacity: 0; animation-delay: ${delay}ms">
                         <td><code>${p.pid}</code></td>
                         <td><b>${p.name}</b></td>
                         <td>${p.username || '-'}</td>
-                        <td><div class="progress" style="height: 6px; width: 50px; display:inline-block; margin-right:5px;"><div class="progress-bar bg-primary" style="width:${Math.min(p.cpu_percent, 100)}%"></div></div> ${p.cpu_percent.toFixed(1)}%</td>
+                        <td style="width: 200px;">
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1" style="height: 6px; margin-right: 10px;">
+                                    <div class="progress-bar bg-primary" style="width:${Math.min(p.cpu_percent, 100)}%"></div>
+                                </div> 
+                                <span style="min-width: 40px; text-align: right;">${p.cpu_percent.toFixed(1)}%</span>
+                            </div>
+                        </td>
                         <td>${p.memory_percent.toFixed(1)}%</td>
                     </tr>`;
                 });
-                document.querySelector("#procTable tbody").innerHTML = html;
+                
+                // Only update if row count changes or every few seconds to avoid constantly killing DOM state
+                // For now, simple replacement is okay because psutil updates are 3s apart.
+                const tbody = document.querySelector("#procTable tbody");
+                tbody.innerHTML = html;
+                
             } catch(e) { console.error(e); }
         });
+
+        // Add CSS for fade in
+        const style = document.createElement('style');
+        style.textContent = `
+            @@keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
 
         connection.start();
     </script>

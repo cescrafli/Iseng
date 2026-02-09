@@ -43,35 +43,36 @@
                     if(d.percent > 70) color = "warning";
                     if(d.percent > 90) color = "danger";
 
+                    // Use external gradient class to avoid inline style syntax issues in Razor
                     html += `
                     <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100">
+                        <div class="card h-100 border-0">
                             <div class="card-title">
-                                ${d.device} <small class="text-muted">(${d.fstype})</small>
-                                <span class="badge bg-secondary">${d.mountpoint}</span>
+                                <div><i class="fas fa-hdd me-2"></i> ${d.device}</div>
+                                <span class="badge bg-primary bg-opacity-25 text-primary">${d.mountpoint}</span>
                             </div>
                             <div class="card-body">
-                                <h2 class="display-6 mt-3 mb-1">${d.percent}%</h2>
-                                <small class="text-muted">Used</small>
+                                <h2 class="display-5 fw-bold mt-2 mb-1">${d.percent}%</h2>
+                                <small class="text-secondary text-uppercase fw-bold" style="letter-spacing:1px; font-size:0.7rem;">${d.fstype} Filesystem</small>
                                 
-                                <div class="progress mt-2 mb-3" style="height: 10px;">
-                                    <div class="progress-bar bg-${color}" role="progressbar" style="width: ${d.percent}%"></div>
+                                <div class="progress mt-3 mb-4" style="height: 8px; border-radius: 4px; background: rgba(0,0,0,0.05);">
+                                    <div class="progress-bar bg-${color}" role="progressbar" style="width: ${d.percent}%; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);"></div>
                                 </div>
                                 
-                                <ul class="list-group list-group-flush small">
-                                    <li class="list-group-item d-flex justify-content-between">
-                                        <span>Total Size</span>
-                                        <strong>${totalGB} GB</strong>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between">
-                                        <span>Used</span>
-                                        <strong>${usedGB} GB</strong>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between">
-                                        <span>Free</span>
-                                        <strong>${freeGB} GB</strong>
-                                    </li>
-                                </ul>
+                                <div class="row g-2 small text-secondary">
+                                    <div class="col-4">
+                                        <div class="fw-bold text-dark">${totalGB} GB</div>
+                                        <div>Total</div>
+                                    </div>
+                                    <div class="col-4 border-start border-end text-center">
+                                        <div class="fw-bold text-dark">${usedGB} GB</div>
+                                        <div>Used</div>
+                                    </div>
+                                    <div class="col-4 text-end">
+                                        <div class="fw-bold text-success">${freeGB} GB</div>
+                                        <div>Free</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>`;

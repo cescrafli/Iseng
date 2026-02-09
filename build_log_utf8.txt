@@ -1,0 +1,13 @@
+﻿  Determining projects to restore...
+  All projects are up-to-date for restore.
+D:\LENOVO\Downloads\ZIP\cobain\CyberMonitor\CyberMonitor\Views\Processes\Index.cshtml(81,14): error CS0103: The name 'keyframes' does not exist in the current context [D:\LENOVO\Downloads\ZIP\cobain\CyberMonitor\CyberMonitor\CyberMonitor.csproj]
+D:\LENOVO\Downloads\ZIP\cobain\CyberMonitor\CyberMonitor\Services\PythonRunnerService.cs(41,37): warning CS8600: Converting null literal or possible null value to non-nullable type. [D:\LENOVO\Downloads\ZIP\cobain\CyberMonitor\CyberMonitor\CyberMonitor.csproj]
+
+Build FAILED.
+
+D:\LENOVO\Downloads\ZIP\cobain\CyberMonitor\CyberMonitor\Services\PythonRunnerService.cs(41,37): warning CS8600: Converting null literal or possible null value to non-nullable type. [D:\LENOVO\Downloads\ZIP\cobain\CyberMonitor\CyberMonitor\CyberMonitor.csproj]
+D:\LENOVO\Downloads\ZIP\cobain\CyberMonitor\CyberMonitor\Views\Processes\Index.cshtml(81,14): error CS0103: The name 'keyframes' does not exist in the current context [D:\LENOVO\Downloads\ZIP\cobain\CyberMonitor\CyberMonitor\CyberMonitor.csproj]
+    1 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.77
