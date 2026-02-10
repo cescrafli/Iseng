@@ -19,14 +19,25 @@ namespace CyberMonitor.Services
         {
             _logger.LogInformation("PythonRunnerService is starting.");
 
+            // 1. Lokasi Script (Otomatis ikut di mana aplikasi diinstall)
+            string basePath = AppDomain.CurrentDomain.BaseDirectory;
+            string scriptPath = Path.Combine(basePath, "stats_collector.py");
+
+            // 2. Lokasi Python (HARDCODE ke folder Python di Drive D)
+            // UPDATE: Sesuai info terakhir kamu
+            string pythonPath = @"D:\LENOVO\Downloads\ZIP\Python\python.exe"; 
+
+            _logger.LogInformation($"Using Python at: {pythonPath}");
+            _logger.LogInformation($"Looking for script at: {scriptPath}");
+
             var processStartInfo = new ProcessStartInfo
             {
-                FileName = "python", // Assuming python is in PATH
-                Arguments = "stats_collector.py",
+                FileName = pythonPath, 
+                Arguments = $"\"{scriptPath}\"", 
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                WorkingDirectory = Directory.GetCurrentDirectory()
+                WorkingDirectory = basePath 
             };
 
             using var process = new Process { StartInfo = processStartInfo };
@@ -34,11 +45,11 @@ namespace CyberMonitor.Services
             try
             {
                 process.Start();
-                _logger.LogInformation("Python script started.");
+                _logger.LogInformation($"Python script started successfully. PID: {process.Id}");
 
                 while (!stoppingToken.IsCancellationRequested && !process.HasExited)
                 {
-                    string output = await process.StandardOutput.ReadLineAsync();
+                    string? output = await process.StandardOutput.ReadLineAsync(stoppingToken);
                     if (!string.IsNullOrEmpty(output))
                     {
                         if (output.StartsWith("STATS:"))
@@ -58,13 +69,13 @@ namespace CyberMonitor.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error running Python script.");
+                _logger.LogError(ex, "FATAL ERROR running Python script. Check Path & Permissions!");
             }
             finally
             {
-                if (!process.HasExited)
+                if (process != null && !process.HasExited)
                 {
-                    process.Kill();
+                    try { process.Kill(); } catch { }
                 }
                 _logger.LogInformation("PythonRunnerService is stopping.");
             }
