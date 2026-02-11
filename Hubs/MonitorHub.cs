@@ -19,5 +19,19 @@ namespace CyberMonitor.Hubs
         {
             await Clients.All.SendAsync("ReceiveDiskInfo", diskJson);
         }
+
+        public async Task KillProcess(int pid)
+        {
+            try
+            {
+                var process = System.Diagnostics.Process.GetProcessById(pid);
+                process.Kill();
+                await Clients.All.SendAsync("ProcessKilled", pid, true, $"Process {pid} killed successfully.");
+            }
+            catch (System.Exception ex)
+            {
+                await Clients.Caller.SendAsync("ProcessKilled", pid, false, $"Failed to kill process {pid}: {ex.Message}");
+            }
+        }
     }
 }

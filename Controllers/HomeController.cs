@@ -15,6 +15,12 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
+        ViewBag.MachineName = Environment.MachineName;
+        ViewBag.OSVersion = Environment.OSVersion.ToString();
+        
+        var uptime = TimeSpan.FromMilliseconds(Environment.TickCount64);
+        ViewBag.Uptime = $"{uptime.Days}d {uptime.Hours}h {uptime.Minutes}m";
+
         return View();
     }
 

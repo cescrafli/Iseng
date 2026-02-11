@@ -8,11 +8,13 @@ namespace CyberMonitor.Services
     {
         private readonly IHubContext<MonitorHub> _hubContext;
         private readonly ILogger<PythonRunnerService> _logger;
+        private readonly IConfiguration _configuration; // Added this field
 
-        public PythonRunnerService(IHubContext<MonitorHub> hubContext, ILogger<PythonRunnerService> logger)
+        public PythonRunnerService(IHubContext<MonitorHub> hubContext, ILogger<PythonRunnerService> logger, IConfiguration configuration) // Modified constructor
         {
             _hubContext = hubContext;
             _logger = logger;
+            _configuration = configuration; // Assigned configuration
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -23,9 +25,8 @@ namespace CyberMonitor.Services
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
             string scriptPath = Path.Combine(basePath, "stats_collector.py");
 
-            // 2. Lokasi Python (HARDCODE ke folder Python di Drive D)
-            // UPDATE: Sesuai info terakhir kamu
-            string pythonPath = @"D:\LENOVO\Downloads\ZIP\Python\python.exe"; 
+            // 2. Lokasi Python (Dari Config) // Updated comment
+            string pythonPath = _configuration["PythonPath"] ?? @"D:\LENOVO\Downloads\ZIP\Python\python.exe"; // Fallback // Modified to use IConfiguration
 
             _logger.LogInformation($"Using Python at: {pythonPath}");
             _logger.LogInformation($"Looking for script at: {scriptPath}");

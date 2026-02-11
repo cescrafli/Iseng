@@ -2,6 +2,7 @@
 
 const connection = new signalR.HubConnectionBuilder()
     .withUrl("/monitorHub")
+    .withAutomaticReconnect()
     .build();
 
 // Charts
@@ -138,6 +139,98 @@ let lastCpu = 0;
 let lastMem = 0;
 let lastNet = 0;
 
+// Toast Notification Queue
+const alertQueue = [];
+let isShowingAlert = false;
+
+function showAnomalyAlert(anomaly) {
+    alertQueue.push(anomaly);
+    processAlertQueue();
+}
+
+function processAlertQueue() {
+    if (isShowingAlert || alertQueue.length === 0) return;
+
+    const anomaly = alertQueue.shift();
+    isShowingAlert = true;
+
+    // Create Toast
+    const container = document.getElementById('sentinelAlerts');
+    const toast = document.createElement('div');
+    toast.className = `sentinel-toast toast-${anomaly.severity.toLowerCase()}`;
+
+    // Icon based on severity
+    const icon = anomaly.severity === 'CRITICAL' ? '⚠️' : '⚡';
+
+    toast.innerHTML = `
+        <div class="toast-icon" style="font-size: 1.5rem; margin-right: 15px;">${icon}</div>
+        <div class="toast-content">
+            <h4>${anomaly.type} ${anomaly.severity}</h4>
+            <p>${anomaly.message}</p>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Update Status Indicator based on severity (CRITICAL takes precedence)
+    updateSystemStatus(anomaly.severity);
+
+    // Add to History Log
+    addToHistoryLog(anomaly);
+
+    // Remove after 5 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            toast.remove();
+            isShowingAlert = false;
+            processAlertQueue(); // Show next
+
+            // Revert status if queue empty (simplified logic: reset to normal after alert clears)
+            // In a real app, you'd check active state. For now, we blink back to normal if no new alerts.
+            if (alertQueue.length === 0) {
+                updateSystemStatus('NORMAL');
+            }
+        }, 300);
+    }, 5000);
+}
+
+function addToHistoryLog(anomaly) {
+    const list = document.getElementById('alertHistoryList');
+    if (list.children[0] && list.children[0].classList.contains('text-muted')) {
+        list.innerHTML = "";
+    }
+
+    const item = document.createElement('li');
+    const time = new Date().toLocaleTimeString();
+    const color = anomaly.severity === 'CRITICAL' ? 'text-danger' : 'text-warning';
+
+    item.innerHTML = `<span class="text-muted">[${time}]</span> <span class="${color} fw-bold">${anomaly.type}:</span> ${anomaly.message}`;
+    list.prepend(item); // Newest first
+}
+
+function updateSystemStatus(status) {
+    const indicator = document.getElementById('systemStatusIndicator');
+    const text = document.getElementById('systemStatusText');
+
+    indicator.className = 'status-indicator'; // reset
+
+    if (status === 'CRITICAL') {
+        indicator.classList.add('status-critical');
+        text.innerText = 'Critical';
+        text.style.color = 'var(--danger-color)';
+    } else if (status === 'WARNING') {
+        indicator.classList.add('status-warning');
+        text.innerText = 'Warning';
+        text.style.color = 'var(--warning-color)';
+    } else {
+        indicator.classList.add('status-normal');
+        text.innerText = 'Normal';
+        text.style.color = 'var(--text-secondary)';
+    }
+}
+
 connection.on("ReceiveStats", function (message) {
     try {
         const stats = JSON.parse(message);
@@ -164,8 +257,91 @@ connection.on("ReceiveStats", function (message) {
         updateChart(memChart, stats.memory);
         updateChart(netChart, stats.network_in);
 
+        // Process Anomalies
+        if (stats.anomalies && stats.anomalies.length > 0) {
+            stats.anomalies.forEach(anomaly => {
+                showAnomalyAlert(anomaly);
+            });
+        }
+
     } catch (e) {
         console.error("Error parsing stats:", e);
+    }
+});
+
+connection.on("ReceiveProcesses", function (message) {
+    try {
+        const procs = JSON.parse(message);
+        const tbody = document.querySelector("#processTable tbody");
+        tbody.innerHTML = ""; // Clear existing
+
+        procs.forEach(p => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${p.pid}</td>
+                <td>${p.name}</td>
+                <td>${p.username || '-'}</td>
+                <td class="text-end">${p.cpu_percent.toFixed(1)}%</td>
+                <td class="text-end">${p.memory_percent.toFixed(1)}%</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-danger btn-kill" data-pid="${p.pid}" onclick="killProcess(${p.pid})">Kill</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (e) {
+        console.error("Error parsing processes:", e);
+    }
+});
+
+connection.on("ReceiveDiskInfo", function (message) {
+    try {
+        const disks = JSON.parse(message);
+        const container = document.getElementById("diskContainer");
+        container.innerHTML = "";
+
+        disks.forEach(d => {
+            const item = document.createElement("div");
+            item.className = "mb-3";
+
+            // Color based on usage
+            let colorClass = "bg-success";
+            if (d.percent > 90) colorClass = "bg-danger";
+            else if (d.percent > 75) colorClass = "bg-warning";
+
+            item.innerHTML = `
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="fw-bold">${d.device} <small class="text-muted">(${d.mountpoint})</small></span>
+                    <span class="small">${d.percent}% Used</span>
+                </div>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar ${colorClass}" role="progressbar" style="width: ${d.percent}%"></div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <small class="text-muted">${(d.free / 1024 / 1024 / 1024).toFixed(1)} GB Free / ${(d.total / 1024 / 1024 / 1024).toFixed(1)} GB Total</small>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    } catch (e) {
+        console.error("Error parsing disk info:", e);
+    }
+});
+
+// killProcess function (Phase 3)
+window.killProcess = function (pid) {
+    if (!confirm(`Are you sure you want to KILL process ${pid}?`)) return;
+
+    connection.invoke("KillProcess", pid).catch(function (err) {
+        return console.error(err.toString());
+    });
+};
+
+connection.on("ProcessKilled", function (pid, success, message) {
+    if (success) {
+        showAnomalyAlert({ type: "SYSTEM", severity: "WARNING", message: message });
+    } else {
+        showAnomalyAlert({ type: "ERROR", severity: "CRITICAL", message: message });
     }
 });
 
