@@ -1,11 +1,15 @@
 using CyberMonitor.Hubs;
 using CyberMonitor.Services;
+using Microsoft.EntityFrameworkCore;
+using CyberMonitor.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
+builder.Services.AddDbContext<CyberMonitor.Data.ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHostedService<PythonRunnerService>();
 
 var app = builder.Build();

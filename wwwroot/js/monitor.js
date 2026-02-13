@@ -275,6 +275,11 @@ connection.on("ReceiveProcesses", function (message) {
         const tbody = document.querySelector("#processTable tbody");
         tbody.innerHTML = ""; // Clear existing
 
+        if (procs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No process data available or Access Denied</td></tr>';
+            return;
+        }
+
         procs.forEach(p => {
             const row = document.createElement("tr");
             row.innerHTML = `
@@ -299,6 +304,11 @@ connection.on("ReceiveDiskInfo", function (message) {
         const disks = JSON.parse(message);
         const container = document.getElementById("diskContainer");
         container.innerHTML = "";
+
+        if (disks.length === 0) {
+            container.innerHTML = '<div class="text-center text-muted">No disk info available</div>';
+            return;
+        }
 
         disks.forEach(d => {
             const item = document.createElement("div");
