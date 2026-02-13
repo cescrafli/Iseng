@@ -31,7 +31,7 @@ namespace CyberMonitor.Services
 
             // 1. Tentukan Lokasi Script (PENTING: Gunakan BaseDirectory agar jalan di IIS)
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
-            string scriptPath = Path.Combine(basePath, "stats_collector.py");
+            string scriptPath = Path.Combine(basePath, "Scripts", "stats_collector.py");
 
             // 2. Tentukan Python Path dari appsettings.json
             // Pastikan di IIS nanti user 'IIS AppPool' punya akses ke path ini

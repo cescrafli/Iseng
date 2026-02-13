@@ -8,9 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="stats_collector.py">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <None Update="Scripts\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
