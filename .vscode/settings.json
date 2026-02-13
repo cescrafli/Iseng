@@ -1,0 +1,5 @@
+{
+    "appService.preDeployTask": "publish-release",
+    "appService.deploySubpath": "bin\\Release\\net8.0\\publish",
+    "appService.defaultWebAppToDeploy": "/subscriptions/1566971a-cc53-47d0-a835-c6c304488d0e/resourceGroups/Monitorgroup/providers/Microsoft.Web/sites/monitor-wassap"
+}
