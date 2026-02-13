@@ -26,6 +26,9 @@
                 <li class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "System" ? "active" : "")">
                     <a asp-controller="System" asp-action="Index"><i class="fas fa-hdd me-2"></i> Storage & Info</a>
                 </li>
+                <li class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "History" ? "active" : "")">
+                    <a asp-controller="History" asp-action="Index"><i class="fas fa-history me-2"></i> History Log</a>
+                </li>
             </ul>
         </nav>
 
