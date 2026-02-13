@@ -101,21 +101,13 @@ def get_disk_info():
     return partitions
 
 def main():
-    # Configure stdout for UTF-8 (Windows fix)
-    try:
-        if sys.stdout.encoding.lower() != 'utf-8':
-            sys.stdout.reconfigure(encoding='utf-8')
-    except AttributeError:
-        pass # Python < 3.7 doesn't support reconfigure
+    # ... (kode konfigurasi utf-8 biarkan saja) ...
 
     psutil.cpu_percent()
     last_net = psutil.net_io_counters()
     last_time = time.time()
     tick = 0
     
-    # Send Dummy Data immediately to verify pipe
-    # print('PROCS:[{"pid":123,"name":"TestProcess","username":"Debug","cpu_percent":5.5,"memory_percent":1.2}]', flush=True)
-
     while True:
         try:
             # 1. System Stats (Every 1s)
@@ -125,19 +117,40 @@ def main():
             # 2. Processes (Every 3s)
             if tick % 3 == 0:
                 try:
-                    # DEBUG: Send 1 Real Process + 1 Dummy to see if they appear
-                    # procs = get_processes() 
-                    # If real processes fail, send DUMMY
-                    procs = [
-                        {"pid": 9999, "name": "DEBUG_PROCESS", "username": "TEST", "cpu_percent": 10.5, "memory_percent": 2.0},
-                        {"pid": 8888, "name": "System_Check", "username": "SYSTEM", "cpu_percent": 0.1, "memory_percent": 0.1}
-                    ]
+                    # --- PERBAIKAN DI SINI ---
+                    procs = get_processes() # Hapus tanda pagar (#) di sini
+                    
+                    # Hapus atau komentari bagian dummy data di bawah ini:
+                    # procs = [
+                    #    {"pid": 9999, "name": "DEBUG_PROCESS", ...}
+                    # ]
+                    
                     print(f"PROCS:{json.dumps(procs)}", flush=True)
                 except Exception as e:
                     sys.stderr.write(f"Error getting processes: {e}\n")
-                    # Send empty list so frontend clears loading state
                     print(f"PROCS:[]", flush=True)
 
+            # 3. Disk Info (Every 10s)
+            if tick % 10 == 0:
+                try:
+                    # --- PERBAIKAN JUGA DI SINI (Disk kamu juga pakai dummy) ---
+                    disks = get_disk_info() # Hapus tanda pagar (#)
+                    
+                    # Hapus dummy disk:
+                    # disks = [ ... ]
+                    
+                    print(f"DISK:{json.dumps(disks)}", flush=True)
+                except Exception as e:
+                    sys.stderr.write(f"Error getting disk: {e}\n")
+                    print(f"DISK:[]", flush=True)
+
+            sys.stdout.flush()
+            tick += 1
+            time.sleep(1)
+            
+        except Exception as e:
+            sys.stderr.write(f"Main Loop Error: {e}\n")
+            time.sleep(1)
             # 3. Disk Info (Every 10s)
             if tick % 10 == 0:
                 try:
