@@ -63,14 +63,12 @@ def get_sys_stats(last_net, last_time):
     }, current_net, current_time
 
 def get_processes():
-    # HAPUS 'username' dari sini karena sering bikin AccessDenied di IIS
     attrs = ['pid', 'name', 'cpu_percent', 'memory_percent']
     procs = []
     
     for p in psutil.process_iter(attrs):
         try:
             p_info = p.info
-            # Tambahkan username dummy agar frontend tidak error
             p_info['username'] = "System/Hidden" 
             procs.append(p_info)
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
@@ -82,10 +80,8 @@ def get_processes():
 
 def get_disk_info():
     partitions = []
-    # Gunakan all=False agar tidak membaca drive network/virtual yang sering error
     for part in psutil.disk_partitions(all=False):
         try:
-            # Tambahkan try-except per disk agar 1 disk error tidak mematikan semua
             usage = psutil.disk_usage(part.mountpoint)
             partitions.append({
                 "device": part.device,
@@ -97,7 +93,7 @@ def get_disk_info():
                 "percent": usage.percent
             })
         except Exception: 
-            continue # Skip disk yang tidak bisa dibaca (Access Denied dll)
+            continue
     return partitions
 
 def main():
@@ -117,13 +113,9 @@ def main():
             # 2. Processes (Every 3s)
             if tick % 3 == 0:
                 try:
-                    # --- PERBAIKAN DI SINI ---
-                    procs = get_processes() # Hapus tanda pagar (#) di sini
+                    procs = get_processes()
                     
-                    # Hapus atau komentari bagian dummy data di bawah ini:
-                    # procs = [
-                    #    {"pid": 9999, "name": "DEBUG_PROCESS", ...}
-                    # ]
+
                     
                     print(f"PROCS:{json.dumps(procs)}", flush=True)
                 except Exception as e:
@@ -133,11 +125,9 @@ def main():
             # 3. Disk Info (Every 10s)
             if tick % 10 == 0:
                 try:
-                    # --- PERBAIKAN JUGA DI SINI (Disk kamu juga pakai dummy) ---
-                    disks = get_disk_info() # Hapus tanda pagar (#)
+                    disks = get_disk_info()
                     
-                    # Hapus dummy disk:
-                    # disks = [ ... ]
+
                     
                     print(f"DISK:{json.dumps(disks)}", flush=True)
                 except Exception as e:
@@ -151,29 +141,13 @@ def main():
         except Exception as e:
             sys.stderr.write(f"Main Loop Error: {e}\n")
             time.sleep(1)
-            # 3. Disk Info (Every 10s)
-            if tick % 10 == 0:
-                try:
-                    # DEBUG: Send Dummy Disk
-                    # disks = get_disk_info()
-                    disks = [
-                        {"device": "C:", "mountpoint": "C:\\", "fstype": "NTFS", "total": 100000000000, "used": 50000000000, "free": 50000000000, "percent": 50.0},
-                         {"device": "D:", "mountpoint": "D:\\", "fstype": "NTFS", "total": 200000000000, "used": 10000000000, "free": 190000000000, "percent": 5.0}
-                    ]
-                    print(f"DISK:{json.dumps(disks)}", flush=True)
-                except Exception as e:
-                    sys.stderr.write(f"Error getting disk: {e}\n")
-                    # Send empty list so frontend clears loading state
-                    print(f"DISK:[]", flush=True)
+
 
             sys.stdout.flush()
             tick += 1
             time.sleep(1)
             
-        except Exception as e:
-            # Print error ke stderr agar tertangkap oleh log C#
-            sys.stderr.write(f"Main Loop Error: {e}\n")
-            time.sleep(1)
+
 
 if __name__ == "__main__":
     main()

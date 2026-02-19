@@ -29,34 +29,30 @@ namespace CyberMonitor.Services
         {
             _logger.LogInformation("PythonRunnerService is starting...");
 
-            // 1. Tentukan Lokasi Script (PENTING: Gunakan BaseDirectory agar jalan di IIS)
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
             string scriptPath = Path.Combine(basePath, "Scripts", "stats_collector.py");
 
-            // 2. Tentukan Python Path dari appsettings.json
-            // Pastikan di IIS nanti user 'IIS AppPool' punya akses ke path ini
             string pythonPath = _configuration["PythonPath"] ?? "python"; 
 
             _logger.LogInformation($"Base Directory: {basePath}");
             _logger.LogInformation($"Script Path: {scriptPath}");
             _logger.LogInformation($"Python Executable: {pythonPath}");
 
-            // Cek apakah script ada sebelum dijalankan
             if (!File.Exists(scriptPath))
             {
                 _logger.LogError($"FATAL: File script tidak ditemukan di {scriptPath}. Pastikan sudah di-publish!");
-                return; // Stop service jika file tidak ada
+                return;
             }
 
             var processStartInfo = new ProcessStartInfo
             {
                 FileName = pythonPath,
-                Arguments = $"\"{scriptPath}\"", // Tanda kutip untuk path yang mengandung spasi
+                Arguments = $"\"{scriptPath}\"",
                 RedirectStandardOutput = true,
-                RedirectStandardError = true,     // PENTING: Agar bisa baca error Python
+                RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                WorkingDirectory = basePath       // PENTING: Set folder kerja ke lokasi aplikasi
+                WorkingDirectory = basePath
             };
 
             using var process = new Process { StartInfo = processStartInfo };
@@ -66,8 +62,6 @@ namespace CyberMonitor.Services
                 process.Start();
                 _logger.LogInformation($"Python script started. PID: {process.Id}");
 
-                // 3. Task khusus untuk membaca ERROR dari Python (Debugging)
-                // Ini akan menangkap error seperti 'ModuleNotFoundError' atau 'Access is denied'
                 _ = Task.Run(async () =>
                 {
                     try
@@ -81,15 +75,12 @@ namespace CyberMonitor.Services
                     catch { /* Ignore error reading if process killed */ }
                 }, stoppingToken);
 
-                // 4. Loop Utama Membaca Data
                 while (!stoppingToken.IsCancellationRequested && !process.HasExited)
                 {
                     string? output = await process.StandardOutput.ReadLineAsync(stoppingToken);
                     
                     if (!string.IsNullOrEmpty(output))
-                    {
-                        // Log untuk debug (bisa dikomentari nanti kalau log penuh)
-                        // _logger.LogInformation($"Received: {output}"); 
+                    { 
 
                         if (output.StartsWith("STATS:"))
                         {
@@ -147,7 +138,6 @@ namespace CyberMonitor.Services
             }
             finally
             {
-                // Bersihkan process saat service berhenti
                 if (process != null && !process.HasExited)
                 {
                     _logger.LogWarning("Killing Python process...");
